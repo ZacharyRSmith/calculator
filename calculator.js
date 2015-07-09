@@ -49,6 +49,8 @@ function Calculator() {
 
     this.logCalc = function () {
         console.log(calc);
+        
+        $('button#screen').html(calc);
     };
 
     this.saveCrnt = function () {
