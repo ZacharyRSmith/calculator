@@ -1,149 +1,76 @@
 function Calculator() {
-    this.calc = [0];
-    this.calcLast = 0;
-    this.crnt = "0";
-    this.ops = ["+", '-', '*', '/'];
+    var calc = [0];
+    var crnt = "0";
+    var ops = ["+", '-', '*', '/'];
 
     // ARITH FXNS, (Sorted: +, -, *, /, misc):
-    this.add = function (num1, num2) {
-        return num1 + num2;
-    };
+    var add    = function (num1, num2) { return num1 + num2; };
 
-    this.minus = function (num1, num2) {
-        return num1 - num2;
-    };
+    var minus  = function (num1, num2) { return num1 - num2; };
 
-    this.times = function (num1, num2) {
-        return num1 * num2;
-    };
+    var times  = function (num1, num2) { return num1 * num2; };
 
-    this.divide = function (num1, num2) {
-        return num1 / num2;
-    };
+    var divide = function (num1, num2) { return num1 / num2; };
 
     this.equals = function () {
-        var res = this.evalTimesAndbutton(this.calc);
-        res = this.evalAddAndMinus(res);
-        res = this.evalDanglingOp(res);
-        return res;
-    }
-
-    this.evalAddAndMinus = function (calc) {
-        // Do not iterate to the last element, which is treated specially if op.
-        for (var i = 1; i <= calc.length - 2; i += 2) {
-            if (calc[i] == '+') {
-                var res = this.add(calc[i - 1], calc[i + 1]);
-            } else if (calc[i] == '-') {
-                var res = this.minus(calc[i - 1], calc[i + 1]);
-            }
-
-            if (res != null) {
-                calc.splice((i - 1), 3, res);
-                i -= 2;
-            }
-
-            res = null
-        }
-        return calc;
-    }
-
-    this.evalTimesAndbutton = function (calc) {
-        // Do not iterate to the last element, which is treated specially if op.
-        for (var i = 1; i <= calc.length - 2; i += 2) {
-            if (calc[i] == '*') {
-                var res = this.times(calc[i - 1], calc[i + 1]);
-            } else if (calc[i] == '/') {
-                var res = this.divide(calc[i - 1], calc[i + 1]);
-            }
-
-            if (res != null) {
-                calc.splice((i - 1), 3, res);
-                i -= 2;
-            }
-
-            res = null;
-        }
-        return calc;
-    }
-
-    this.evalDanglingOp = function (calc) {
-        // calc should be an ary of a num and maybe an op.
-        // If more than 1 elt in calc, the 2nd elt should be an op.
-        if (calc.length > 1) {
-            switch (calc[calc.length - 1]) {
-                case '+':
-                    return [this.add(calc[0], calc[0])];
-                case '-':
-                    return [this.add(calc[0], calc[0])];
-                case '*':
-                    return [this.add(calc[0], calc[0])];
-                case '/':
-                    return [this.add(calc[0], calc[0])];
-            }
-        } else {
-            return calc;
-        }
-    }
-
-    // OTHER FXNS:
-    this.appendToCrnt = function (num_str) {
-        if (num_str === "0") {
-            if (this.crnt !== "0") {
-                this.crnt = this.crnt + "0";
-            } else {
-                return false;
-            }
-        } else {
-            this.crnt = this.crnt + num_str;
-        }
+		// A calc of length 1 should be a number with no operations.
+		if (calc.length == 1) { return calc; }
+		// Ignore trailing operands.
+		if (isNaN(calc[calc.length-1])) { calc.pop(); }
+		
+		var rslt = calc.reduce(function(memo, crnt, ind) {
+			// Evenly-indexed elements are numbers.
+			if (ind % 2 == 0) { return memo; }
+			var nextNum = calc[ind+1];
+			
+			switch(crnt) {
+				case "+":
+					return add(memo, nextNum);
+				case "-":
+					return minus(memo, nextNum);
+				case "*":
+					return times(memo, nextNum);
+				case "/":
+					return divide(memo, nextNum);
+			}
+		});
+		
+        return rslt;
     };
 
-    this.calcLastIsOp = function () {
-        this.setCalcLast();
-        if (this.ops.indexOf(this.calcLast) != -1) {
-            return true;
-        } else {
-            return false;
-        }
+    // OTHER FXNS:
+    var isOp = function(arg) { return ops.indexOf(arg) > -1; };
+        
+    this.appendToCrnt = function (num_str) {
+        if (num_str === "0" && crnt === "0") { return; }
+        
+        crnt += num_str;
     };
 
     this.logCalc = function () {
-        console.log(this.calc);
+        console.log(calc);
     };
 
     this.saveCrnt = function () {
-        // Do not save crnt if it is empty.
-        if (this.crnt === "") {
-            return false;
-        }
+        // Ignore if crnt is empty.
+        if (!crnt) { return; }
 
-        // If calcLast is an op, push crnt into calc.
-        // Else, replace calcLast with crnt.
-        if (this.calcLastIsOp()) {
-            this.calc.push(parseFloat(this.crnt));
-        } else {
-            this.setCalcLast(parseFloat(this.crnt));
+        if (isOp(calc[calc.length-1])) {
+            calc.push(parseFloat(crnt));
         }
+        else { calc[calc.length-1] = parseFloat(crnt); }
     };
-
+		
     this.saveOp = function (op) {
-        // If calcLast is already an op, reset it.
-        // Else, push op-param into calc.
-        if (this.calcLastIsOp()) {
-            this.setCalcLast(op);
-        } else {
-            this.calc.push(op);
-        }
+        // If last calc element is already an op, overwrite it.
+        // Else, push op into calc.
+        var last
+        if (isOp(calc[calc.length-1])) { calc[calc.length-1] = op; }
+        else { calc.push(op); }
     };
 
-    this.setCalcLast = function (param) {
-        // If param, then set the last element of calc to param.
-        if (param !== undefined) {
-            this.calc[((this.calc).length - 1)] = param;
-        }
-
-        this.calcLast = this.calc[((this.calc).length - 1)];
-    };
+    this.setCalc = function(num) { calc = [num]; }
+    this.setCrnt = function(str) { crnt = str; }
 }
 
 c = new Calculator();
@@ -151,7 +78,7 @@ c = new Calculator();
 $(document).ready(function () {
     c.logCalc();
 
-    // FXNS FOR CLICKS ON NUM buttonS.
+    // FXNS FOR CLICKS ON NUM buttons.
     $('button#0').click(function () {
         c.appendToCrnt("0");
         c.saveCrnt();
@@ -203,37 +130,37 @@ $(document).ready(function () {
         c.logCalc();
     });
 
-    // FXNS FOR CLICKS ON OP buttonS.
+    // FXNS FOR CLICKS ON OP buttons.
     $('button#add').click(function () {
         c.saveOp('+');
-        c.crnt = "";
+        c.setCrnt("");
         c.logCalc();
     });
     $('button#minus').click(function () {
         c.saveOp('-');
-        c.crnt = "";
+        c.setCrnt("");
         c.logCalc();
     });
     $('button#times').click(function () {
         c.saveOp('*');
-        c.crnt = "";
+        c.setCrnt("");
         c.logCalc();
     });
     $('button#divide').click(function () {
         c.saveOp('/');
-        c.crnt = "";
+        c.setCrnt("");
         c.logCalc();
     });
     $('button#equals').click(function () {
-        c.calc = c.equals();
+        c.setCrnt(c.equals());
+        c.setCalc(c.equals());
         c.logCalc();
     });
 
     // FXN FOR CLICKS ON CLEAR:
     $('button#clear').click(function () {
-        c.calc = [0];
-        c.calcLast = 0;
-        c.crnt = "0";
+        c.setCalc(0);
+        c.setCrnt("0");
         c.logCalc();
     });
 });
